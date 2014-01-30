@@ -6,9 +6,11 @@ class CatalogEntry:
     def __init__(self, password):
         self.password = password
         self.ip = None
+        self.static = (not self.password)
 
     def updateIp(self, ip):
-        self.ip = ip
+        if not self.static:
+            self.ip = ip
 
     def getIp(self):
         return self.ip
@@ -31,13 +33,15 @@ class Catalog:
         for domain, config in data.iteritems():
             domain = domain.lower()
 
-            if config.get("password"):
-                self.catalog[domain] = CatalogEntry(config["password"])
+            if not config.get("password"):
+                syslog.syslog(syslog.LOG_INFO, "'%s' has no password given. Using static DNS." % domain)
 
-                if domain in cacheData:
-                    self.catalog[domain].updateIp(cacheData[domain])
-            else:
-                syslog.syslog("'%s' has no password given" % domain)
+            self.catalog[domain] = CatalogEntry(config.get("password"))
+
+            if config.get("ip"):
+                self.catalog[domain].updateIp(config["ip"]);
+            elif domain in cacheData:
+                self.catalog[domain].updateIp(cacheData[domain])
 
     def updateIp(self, domain, ip):
         domain = domain.lower()
