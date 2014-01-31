@@ -3,9 +3,9 @@ import json
 import traceback
 
 class CatalogEntry:
-    def __init__(self, password):
+    def __init__(self, password, ip):
         self.password = password
-        self.ip = None
+        self.ip = ip
         self.static = (not self.password)
 
     def updateIp(self, ip):
@@ -36,12 +36,13 @@ class Catalog:
             if not config.get("password"):
                 syslog.syslog(syslog.LOG_INFO, "'%s' has no password given. Using static DNS." % domain)
 
-            self.catalog[domain] = CatalogEntry(config.get("password"))
-
+            ip = None
             if config.get("ip"):
-                self.catalog[domain].updateIp(config["ip"]);
+                ip = config["ip"]
             elif domain in cacheData:
-                self.catalog[domain].updateIp(cacheData[domain])
+                ip = cacheData[domain]
+
+            self.catalog[domain] = CatalogEntry(config.get("password"), ip)
 
     def updateIp(self, domain, ip):
         domain = domain.lower()
